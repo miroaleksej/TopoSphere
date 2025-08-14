@@ -12,6 +12,185 @@
 
 **TopoSphere** is a revolutionary framework for topological analysis of ECDSA implementations that transforms cryptographic security assessment through advanced mathematical principles. Unlike traditional auditing tools, TopoSphere treats the ECDSA signature space as a topological torus, enabling unprecedented vulnerability detection while protecting intellectual property through a client-server architecture.
 
+# TopoSphere: Структура файлов для GitHub
+
+```
+TopoSphere/
+├── README.md
+├── LICENSE
+├── CONTRIBUTING.md
+├── SECURITY.md
+├── docs/
+│   ├── architecture/
+│   │   ├── system_architecture.md
+│   │   ├── threat_model.md
+│   │   ├── security_guarantees.md
+│   │   └── design_principles.md
+│   ├── api/
+│   │   ├── client_api.md
+│   │   ├── server_api.md
+│   │   └── protocol_specification.md
+│   ├── tutorials/
+│   │   ├── getting_started.md
+│   │   ├── integration_with_bitcoin_wallets.md
+│   │   └── advanced_analysis_techniques.md
+│   ├── research/
+│   │   ├── topological_analysis_paper.pdf
+│   │   ├── quantum_scanning_paper.pdf
+│   │   └── post_quantum_integration.pdf
+│   └── diagrams/
+│       ├── system_flow.png
+│       ├── module_interactions.png
+│       └── security_layers.png
+├── client/
+│   ├── __init__.py
+│   ├── config/
+│   │   ├── __init__.py
+│   │   ├── client_config.py
+│   │   └── security_policy.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── topological_generator.py
+│   │   ├── nonce_manager.py
+│   │   └── security_recommender.py
+│   ├── protocols/
+│   │   ├── __init__.py
+│   │   ├── secure_communication.py
+│   │   ├── spiral_scan_client.py
+│   │   └── tcon_client.py
+│   ├── integration/
+│   │   ├── __init__.py
+│   │   ├── p2pkh_wallet.py
+│   │   ├── bip32_wallet.py
+│   │   ├── hardware_wallet.py
+│   │   └── ethereum_wallet.py
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── crypto_utils.py
+│   │   ├── topology_utils.py
+│   │   └── differential_privacy.py
+│   └── tests/
+│       ├── __init__.py
+│       ├── test_topological_generator.py
+│       ├── test_nonce_manager.py
+│       ├── test_secure_communication.py
+│       └── test_wallet_integration.py
+├── server/
+│   ├── __init__.py
+│   ├── config/
+│   │   ├── __init__.py
+│   │   ├── server_config.py
+│   │   └── resource_policy.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── topological_oracle.py
+│   │   ├── dynamic_compute_router.py
+│   │   └── anomaly_detector.py
+│   ├── modules/
+│   │   ├── __init__.py
+│   │   ├── torus_scan/
+│   │   │   ├── __init__.py
+│   │   │   ├── spiral_analysis.py
+│   │   │   ├── collision_detector.py
+│   │   │   └── symmetry_checker.py
+│   │   ├── differential_analysis/
+│   │   │   ├── __init__.py
+│   │   │   ├── reference_implementations.py
+│   │   │   ├── topological_distance.py
+│   │   │   └── anomaly_pattern.py
+│   │   ├── tcon_analysis/
+│   │   │   ├── __init__.py
+│   │   │   ├── betti_calculator.py
+│   │   │   ├── recursive_refinement.py
+│   │   │   └── conformance_checker.py
+│   │   ├── dynamic_analysis/
+│   │   │   ├── __init__.py
+│   │   │   ├── vulnerability_model.py
+│   │   │   ├── time_series.py
+│   │   │   └── risk_forecaster.py
+│   │   ├── predictive_analysis/
+│   │   │   ├── __init__.py
+│   │   │   ├── ml_model.py
+│   │   │   ├── feature_extractor.py
+│   │   │   └── vulnerability_predictor.py
+│   │   └── quantum_scanning/
+│   │       ├── __init__.py
+│   │       ├── quantum_analog.py
+│   │       ├── entanglement_entropy.py
+│   │       └── vulnerability_scanner.py
+│   ├── compression/
+│   │   ├── __init__.py
+│   │   ├── hypercube_compression.py
+│   │   ├── topological_compression.py
+│   │   ├── algebraic_compression.py
+│   │   ├── spectral_compression.py
+│   │   └── hybrid_compression.py
+│   ├── post_quantum/
+│   │   ├── __init__.py
+│   │   ├── sike_integration.py
+│   │   ├── csidh_integration.py
+│   │   └── nist_pqc_integration.py
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── crypto_utils.py
+│   │   ├── topology_utils.py
+│   │   ├── differential_privacy.py
+│   │   └── secure_random.py
+│   └── tests/
+│       ├── __init__.py
+│       ├── test_topological_oracle.py
+│       ├── test_torus_scan.py
+│       ├── test_differential_analysis.py
+│       ├── test_tcon_analysis.py
+│       ├── test_compression.py
+│       └── test_post_quantum.py
+├── shared/
+│   ├── __init__.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── topological_models.py
+│   │   ├── security_models.py
+│   │   └── cryptographic_models.py
+│   ├── protocols/
+│   │   ├── __init__.py
+│   │   ├── secure_protocol.py
+│   │   ├── message_formats.py
+│   │   └── noise_parameters.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── math_utils.py
+│       ├── elliptic_curve.py
+│       └── topology_calculations.py
+├── scripts/
+│   ├── __init__.py
+│   ├── deploy/
+│   │   ├── deploy_server.py
+│   │   ├── configure_firewall.py
+│   │   └── setup_tls.py
+│   ├── maintenance/
+│   │   ├── update_models.py
+│   │   ├── rotate_keys.py
+│   │   └── clean_temp_files.py
+│   └── development/
+│       ├── generate_diagrams.py
+│       ├── run_benchmarks.py
+│       └── test_all.py
+├── requirements.txt
+├── requirements-dev.txt
+├── setup.py
+└── .github/
+    ├── workflows/
+    │   ├── ci.yml
+    │   ├── security-scan.yml
+    │   └── release.yml
+    ├── ISSUE_TEMPLATE/
+    │   ├── bug_report.md
+    │   ├── feature_request.md
+    │   └── security_vulnerability.md
+    └── PULL_REQUEST_TEMPLATE.md
+```
+
+
 ## 🔬 Scientific Foundation
 
 TopoSphere is built upon rigorous mathematical principles:
