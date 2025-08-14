@@ -5,7 +5,10 @@
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://python.org)
 ![GitHub visitors](https://komarev.com/ghpvc/?unit=Visitors&repo_id=toposphere.ecdsa-analysis&style=flat-square)
 
-![image](https://github.com/user-attachments/assets/926d1336-032a-4fbe-bdde-d391d0b6875b)
+![Visitors](https://api.visitorbadge.io/api/visitors?path=https://github.com/yourrepo&label=Visitors&countColor=%23263759)
+
+[Why Your Crypto Wallet Is Not As Secure As You Think](https://github.com/miroaleksej/isogenyguard-sdk/blob/main/Why%20Your%20Crypto%20Wallet%20Is%20Not%20As%20Secure%20As%20You%20Think.md)
+
 
 **TopoSphere** is a revolutionary framework for topological analysis of ECDSA implementations that transforms cryptographic security assessment through advanced mathematical principles. Unlike traditional auditing tools, TopoSphere treats the ECDSA signature space as a topological torus, enabling unprecedented vulnerability detection while protecting intellectual property through a client-server architecture.
 
