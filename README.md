@@ -1,4 +1,5 @@
 # TopoSphere: Topological Analysis Framework for ECDSA Security
+![image](https://github.com/user-attachments/assets/a5a6f428-aa0b-4ad2-85a9-69360e00d63f)
 
 [![TopoSphere](https://img.shields.io/badge/TopoSphere-Revolutionary%20Security%20Framework-blue)](https://github.com/toposphere/ecdsa-analysis)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
