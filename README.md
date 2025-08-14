@@ -3,7 +3,7 @@
 [![TopoSphere](https://img.shields.io/badge/TopoSphere-Revolutionary%20Security%20Framework-blue)](https://github.com/toposphere/ecdsa-analysis)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://python.org)
-![GitHub visitors](https://komarev.com/ghpvc/?unit=Visitors&repo_id=toposphere.ecdsa-analysis&style=flat-square)
+!
 
 ![Visitors](https://api.visitorbadge.io/api/visitors?path=https://github.com/yourrepo&label=Visitors&countColor=%23263759)
 
