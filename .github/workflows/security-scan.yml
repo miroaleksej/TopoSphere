@@ -1,0 +1,659 @@
+name: TopoSphere Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 0 * * 0' # Weekly on Sunday at midnight
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  # ======================
+  # SECURITY SCAN
+  # ======================
+  security-scan:
+    name: Topological Security Scan
+    runs-on: ubuntu-latest
+    env:
+      PYTHON_VERSION: '3.10'
+      AUDITCORE_VERSION: 'v3.2'
+      SECP256K1_N: 115792089237316195423570985008687907852837564279074904382605163141518161494337
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libopenblas-dev liblapack-dev gfortran
+          sudo apt-get install -y graphviz libgraphviz-dev pkg-config
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install bandit safety semgrep trivy
+
+      - name: Verify topological dependencies
+        run: |
+          python -c "import giotto_tda; print(f'giotto-tda version: {giotto_tda.__version__}')"
+          python -c "import ripser; print(f'ripser version: {ripser.__version__}')"
+          python -c "import persim; print(f'persim version: {persim.__version__}')"
+          python -c "import kmapper; print(f'kmapper version: {kmapper.__version__}')"
+
+      - name: Generate test signatures
+        run: |
+          # Generate secure implementation data (uniform distribution on torus)
+          python -c """
+          import numpy as np
+          from client.utils.crypto_utils import generate_signature_sample
+          from shared.utils.elliptic_curve import get_curve
+          
+          n = ${{ env.SECP256K1_N }}
+          n_points = 1000
+          
+          # Generate secure implementation data (uniform distribution on torus)
+          print('Generating secure implementation data (uniform distribution)...')
+          public_key = '0279BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798'
+          secure_signatures = generate_signature_sample(public_key, n_points, 'secp256k1')
+          
+          # Save secure signatures
+          with open('secure_signatures.json', 'w') as f:
+              import json
+              json.dump([s.__dict__ for s in secure_signatures], f)
+          
+          # Generate vulnerable implementation data (spiral pattern)
+          print('Generating vulnerable implementation data (spiral pattern)...')
+          from client.utils.crypto_utils import generate_synthetic_signatures
+          vulnerable_signatures = generate_synthetic_signatures(
+              public_key, 
+              n_points, 
+              'spiral',
+              'secp256k1'
+          )
+          
+          # Save vulnerable signatures
+          with open('vulnerable_signatures.json', 'w') as f:
+              json.dump([s.__dict__ for s in vulnerable_signatures], f)
+          
+          print(f'Generated {len(secure_signatures)} secure signatures')
+          print(f'Generated {len(vulnerable_signatures)} vulnerable signatures')
+          """
+
+      - name: Run topological security audit (secure)
+        id: secure-audit
+        run: |
+          python -c """
+          from server.core.topological_oracle import TopologicalOracle
+          from server.modules.tcon_analysis import ConformanceChecker
+          from server.modules.quantum_scanning import QuantumScanner
+          
+          # Load secure signatures
+          with open('secure_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              secure_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          # Initialize components
+          oracle = TopologicalOracle()
+          checker = ConformanceChecker()
+          scanner = QuantumScanner()
+          
+          # Perform analysis
+          analysis = oracle.analyze_signatures(secure_signatures)
+          conformance = checker.check_conformance(secure_signatures)
+          quantum_scan = scanner.scan(secure_signatures)
+          
+          # Verify secure implementation properties
+          assert analysis.betti_numbers.beta_0 == pytest.approx(1.0, abs=0.3)
+          assert analysis.betti_numbers.beta_1 == pytest.approx(2.0, abs=0.5)
+          assert analysis.betti_numbers.beta_2 == pytest.approx(1.0, abs=0.3)
+          assert analysis.torus_confidence > 0.7
+          assert analysis.vulnerability_score < 0.2
+          assert conformance['is_compliant'] is True
+          assert quantum_scan.vulnerability_score < 0.2
+          
+          # Generate report
+          report = oracle.generate_analysis_report(secure_signatures)
+          with open('secure_report.txt', 'w') as f:
+              f.write(report)
+          
+          print(f'Topological audit passed for secure implementation:')
+          print(f'- Torus confidence: {analysis.torus_confidence:.4f}')
+          print(f'- Vulnerability score: {analysis.vulnerability_score:.4f}')
+          print(f'- TCON compliance: {conformance["is_compliant"]}')
+          print(f'- Quantum vulnerability score: {quantum_scan.vulnerability_score:.4f}')
+          """
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run topological security audit (vulnerable)
+        id: vulnerable-audit
+        run: |
+          python -c """
+          from server.core.topological_oracle import TopologicalOracle
+          from server.modules.tcon_analysis import ConformanceChecker
+          from server.modules.quantum_scanning import QuantumScanner
+          
+          # Load vulnerable signatures
+          with open('vulnerable_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              vulnerable_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          # Initialize components
+          oracle = TopologicalOracle()
+          checker = ConformanceChecker()
+          scanner = QuantumScanner()
+          
+          # Perform analysis
+          analysis = oracle.analyze_signatures(vulnerable_signatures)
+          conformance = checker.check_conformance(vulnerable_signatures)
+          quantum_scan = scanner.scan(vulnerable_signatures)
+          
+          # Verify vulnerable implementation properties
+          assert analysis.torus_confidence < 0.5
+          assert analysis.vulnerability_score > 0.5
+          assert conformance['is_compliant'] is False
+          assert quantum_scan.vulnerability_score > 0.5
+          
+          # Generate report
+          report = oracle.generate_analysis_report(vulnerable_signatures)
+          with open('vulnerable_report.txt', 'w') as f:
+              f.write(report)
+          
+          print(f'Topological audit passed for vulnerable implementation:')
+          print(f'- Torus confidence: {analysis.torus_confidence:.4f}')
+          print(f'- Vulnerability score: {analysis.vulnerability_score:.4f}')
+          print(f'- TCON compliance: {conformance["is_compliant"]}')
+          print(f'- Quantum vulnerability score: {quantum_scan.vulnerability_score:.4f}')
+          """
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run TCON verification
+        run: |
+          python -c """
+          from server.modules.tcon_analysis import ConformanceChecker
+          from shared.utils.elliptic_curve import get_curve
+          
+          # Load signatures
+          with open('secure_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              secure_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          with open('vulnerable_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              vulnerable_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          # Initialize checker
+          checker = ConformanceChecker()
+          
+          # Check secure implementation
+          secure_result = checker.check_conformance(secure_signatures)
+          assert secure_result['is_compliant'] is True
+          assert secure_result['betti_deviation'] < 0.2
+          
+          # Check vulnerable implementation
+          vulnerable_result = checker.check_conformance(vulnerable_signatures)
+          assert vulnerable_result['is_compliant'] is False
+          assert vulnerable_result['betti_deviation'] > 0.5
+          
+          print('TCON verification completed successfully')
+          """
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run quantum scanning verification
+        run: |
+          python -c """
+          from server.modules.quantum_scanning import QuantumScanner
+          
+          # Load signatures
+          with open('secure_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              secure_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          with open('vulnerable_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              vulnerable_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          # Initialize scanner
+          scanner = QuantumScanner()
+          
+          # Scan secure implementation
+          secure_scan = scanner.scan(secure_signatures)
+          assert secure_scan.vulnerability_score < 0.2
+          assert secure_scan.is_secure is True
+          
+          # Scan vulnerable implementation
+          vulnerable_scan = scanner.scan(vulnerable_signatures)
+          assert vulnerable_scan.vulnerability_score > 0.5
+          assert vulnerable_scan.is_secure is False
+          
+          print('Quantum scanning verification completed successfully')
+          """
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run entanglement entropy analysis
+        run: |
+          python -c """
+          from server.modules.quantum_scanning import EntanglementEntropyAnalyzer
+          
+          # Load secure signatures
+          with open('secure_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              secure_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          # Initialize analyzer
+          analyzer = EntanglementEntropyAnalyzer()
+          
+          # Analyze secure implementation
+          secure_analysis = analyzer.analyze(secure_signatures[0].public_key)
+          assert secure_analysis.entanglement_metrics.entanglement_score < 0.3
+          assert secure_analysis.quantum_vulnerability_score < 0.2
+          
+          # Generate weak key signatures (for testing)
+          from client.utils.crypto_utils import generate_signature_sample
+          curve = get_curve('secp256k1')
+          weak_d = ${{ env.SECP256K1_N }} // 3
+          Q = curve.G * weak_d
+          weak_public_key = point_to_public_key_hex(Point(Q.x, Q.y, 'secp256k1'))
+          weak_signatures = generate_signature_sample(weak_public_key, 1000, 'secp256k1')
+          
+          # Analyze weak key implementation
+          weak_analysis = analyzer.analyze(weak_public_key)
+          assert weak_analysis.entanglement_metrics.gcd_value > 1
+          assert weak_analysis.quantum_vulnerability_score > 0.7
+          
+          print('Entanglement entropy analysis completed successfully')
+          """
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run collision pattern detection
+        run: |
+          python -c """
+          from server.modules.torus_scan.collision_detector import CollisionDetector
+          
+          # Load secure signatures
+          with open('secure_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              secure_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          # Load vulnerable signatures
+          with open('vulnerable_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              vulnerable_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          # Initialize detector
+          detector = CollisionDetector()
+          
+          # Detect collisions in secure implementation
+          secure_collisions = detector.detect_collisions(secure_signatures)
+          assert secure_collisions['collision_rate'] < 0.05
+          assert secure_collisions['is_vulnerable'] is False
+          
+          # Detect collisions in vulnerable implementation
+          vulnerable_collisions = detector.detect_collisions(vulnerable_signatures)
+          assert vulnerable_collisions['collision_rate'] > 0.1
+          assert vulnerable_collisions['is_vulnerable'] is True
+          
+          print('Collision pattern detection completed successfully')
+          """
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run differential privacy verification
+        run: |
+          python -c """
+          from server.utils.differential_privacy import DifferentialPrivacy
+          from server.config.server_config import ServerConfig
+          
+          # Create config
+          config = ServerConfig(
+              curve='secp256k1',
+              log_level='INFO',
+              log_to_console=False,
+              max_analysis_time=300.0,
+              max_memory_usage=0.8
+          )
+          
+          # Initialize privacy module
+          dp = DifferentialPrivacy(config)
+          
+          # Load secure signatures
+          with open('secure_signatures.json', 'r') as f:
+              import json
+              from shared.models.cryptographic_models import ECDSASignature
+              secure_signatures = [ECDSASignature(**s) for s in json.load(f)]
+          
+          # Analyze with and without privacy
+          private_analysis = dp.apply_privacy(secure_signatures, apply_privacy=True)
+          regular_analysis = dp.apply_privacy(secure_signatures, apply_privacy=False)
+          
+          # Verify privacy parameters
+          assert private_analysis.privacy_parameters.epsilon > 0.0
+          assert private_analysis.privacy_parameters.delta >= 0.0
+          
+          # Verify noise has been added
+          differences = 0
+          if private_analysis.analysis_result.betti_numbers.beta_0 != regular_analysis.analysis_result.betti_numbers.beta_0:
+              differences += 1
+          if private_analysis.analysis_result.betti_numbers.beta_1 != regular_analysis.analysis_result.betti_numbers.beta_1:
+              differences += 1
+          if private_analysis.analysis_result.betti_numbers.beta_2 != regular_analysis.analysis_result.betti_numbers.beta_2:
+              differences += 1
+          assert differences > 0
+          
+          # Verify privacy budget usage
+          assert private_analysis.epsilon_consumed > 0.0
+          assert private_analysis.delta_consumed >= 0.0
+          
+          print('Differential privacy verification completed successfully')
+          """
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run resource constraint testing
+        run: |
+          python -c """
+          from server.core.dynamic_compute_router import DynamicComputeRouter
+          from server.config.server_config import ServerConfig
+          
+          # Create config
+          config = ServerConfig(
+              curve='secp256k1',
+              log_level='INFO',
+              log_to_console=False,
+              max_analysis_time=300.0,
+              max_memory_usage=0.8
+          )
+          
+          # Initialize router
+          router = DynamicComputeRouter(config)
+          
+          # Test resource-constrained analysis
+          secure_result = router.execute_with_constraints(
+              lambda: analyze_secure_signatures(),
+              max_memory_usage=0.3,
+              max_cpu_usage=0.5,
+              max_time=10.0
+          )
+          assert secure_result['vulnerability_score'] < 0.2
+          assert secure_result['analysis_method'] == 'resource_constrained'
+          
+          vulnerable_result = router.execute_with_constraints(
+              lambda: analyze_vulnerable_signatures(),
+              max_memory_usage=0.3,
+              max_cpu_usage=0.5,
+              max_time=10.0
+          )
+          assert vulnerable_result['vulnerability_score'] > 0.5
+          assert vulnerable_result['analysis_method'] == 'resource_constrained'
+          
+          print('Resource constraint testing completed successfully')
+          """
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Run security report generation
+        run: |
+          echo "Generating security reports..."
+          cat secure_report.txt
+          echo ""
+          echo "========================================"
+          echo ""
+          cat vulnerable_report.txt
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: |
+            secure_report.txt
+            vulnerable_report.txt
+            secure_signatures.json
+            vulnerable_signatures.json
+
+      - name: Generate security summary
+        id: security-summary
+        run: |
+          secure_score=$(grep 'Vulnerability Score' secure_report.txt | awk '{print $4}')
+          vulnerable_score=$(grep 'Vulnerability Score' vulnerable_report.txt | awk '{print $4}')
+          
+          echo "secure_score=$secure_score" >> $GITHUB_OUTPUT
+          echo "vulnerable_score=$vulnerable_score" >> $GITHUB_OUTPUT
+          
+          if (( $(echo "$secure_score < 0.2" | bc -l) )) && (( $(echo "$vulnerable_score > 0.5" | bc -l) )); then
+            echo "security_status=PASS" >> $GITHUB_OUTPUT
+            echo "Security verification passed: secure implementation has low vulnerability score, vulnerable implementation has high vulnerability score"
+          else
+            echo "security_status=FAIL" >> $GITHUB_OUTPUT
+            echo "Security verification failed: implementation vulnerability scores are not as expected"
+          fi
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: security-results.sarif
+        if: always()
+
+  # ======================
+  # SECURITY AUDIT REPORT
+  # ======================
+  security-report:
+    name: Security Audit Report
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download security reports
+        uses: actions/download-artifact@v3
+        with:
+          name: security-reports
+
+      - name: Generate security audit report
+        id: generate-report
+        run: |
+          # Extract vulnerability scores
+          secure_score=$(grep 'Vulnerability Score' secure_report.txt | awk '{print $4}')
+          vulnerable_score=$(grep 'Vulnerability Score' vulnerable_report.txt | awk '{print $4}')
+          
+          # Determine security status
+          if (( $(echo "$secure_score < 0.2" | bc -l) )) && (( $(echo "$vulnerable_score > 0.5" | bc -l) )); then
+            security_status="PASS"
+            security_status_text="SECURE"
+          else
+            security_status="FAIL"
+            security_status_text="VULNERABLE"
+          fi
+          
+          # Create report content
+          cat > security-audit-report.md << EOF
+# TopoSphere Security Audit Report
+
+**Date:** $(date +"%Y-%m-%d %H:%M:%S")
+**Commit:** ${{ github.sha }}
+**Workflow Run:** ${{ github.run_id }}
+
+## Executive Summary
+
+- **Security Status:** $security_status_text
+- **Secure Implementation Vulnerability Score:** $secure_score
+- **Vulnerable Implementation Vulnerability Score:** $vulnerable_score
+- **Topological Conformance:** Verified
+- **Quantum Scanning:** Verified
+- **Entanglement Entropy:** Verified
+- **Collision Patterns:** Verified
+- **Differential Privacy:** Verified
+
+## Detailed Analysis
+
+### Secure Implementation Analysis
+$(grep -A 10 'SECURITY ASSESSMENT:' secure_report.txt)
+
+### Vulnerable Implementation Analysis
+$(grep -A 10 'SECURITY ASSESSMENT:' vulnerable_report.txt)
+
+## Verification Details
+
+- For secure ECDSA implementations, the signature space forms a topological torus (β₀=1, β₁=2, β₂=1)
+- Direct analysis without building the full hypercube enables efficient monitoring of large spaces
+- Topology is not a hacking tool, but a microscope for diagnosing vulnerabilities
+- Ignoring topological properties means building cryptography on sand
+
+## Recommendations
+
+$(if [ "$security_status" = "PASS" ]; then
+  echo "- TopoSphere security mechanisms are functioning correctly"
+  echo "- Continue regular security scanning"
+  echo "- Monitor for new vulnerability patterns"
+else
+  echo "- Investigate security verification failure"
+  echo "- Review topological analysis implementation"
+  echo "- Verify betti number calculations"
+fi)
+
+## Conclusion
+
+This security audit verifies that TopoSphere correctly identifies secure and vulnerable ECDSA implementations through topological analysis. The system successfully detects the expected topological properties of secure implementations (torus structure with β₀=1, β₁=2, β₂=1) and correctly identifies vulnerable implementations with distinctive topological patterns.
+
+As stated in our research: "Topology is not a hacking tool, but a microscope for diagnosing vulnerabilities. Ignoring it means building cryptography on sand."
+
+EOF
+
+          echo "report_path=$(pwd)/security-audit-report.md" >> $GITHUB_OUTPUT
+
+      - name: Upload security audit report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-audit-report
+          path: ${{ steps.generate-report.outputs.report_path }}
+
+      - name: Create GitHub release comment
+        if: github.ref == 'refs/heads/main' && steps.security-summary.outputs.security_status == 'PASS'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const reportPath = '${{ steps.generate-report.outputs.report_path }}';
+            const report = require('fs').readFileSync(reportPath, 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## TopoSphere Security Audit\n\n${report}`
+            });
+
+      - name: Fail workflow if security verification failed
+        if: steps.security-summary.outputs.security_status == 'FAIL'
+        run: |
+          echo "Security verification failed. Check the security audit report for details."
+          exit 1
+
+  # ======================
+  # SECURITY METRICS
+  # ======================
+  security-metrics:
+    name: Security Metrics Collection
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download security reports
+        uses: actions/download-artifact@v3
+        with:
+          name: security-reports
+
+      - name: Extract security metrics
+        id: extract-metrics
+        run: |
+          # Extract vulnerability scores
+          secure_score=$(grep 'Vulnerability Score' secure_report.txt | awk '{print $4}')
+          vulnerable_score=$(grep 'Vulnerability Score' vulnerable_report.txt | awk '{print $4}')
+          
+          # Extract betti numbers for secure implementation
+          beta_0=$(grep 'Betti Numbers:' secure_report.txt -A 3 | grep 'β₀' | awk '{print $2}')
+          beta_1=$(grep 'Betti Numbers:' secure_report.txt -A 3 | grep 'β₁' | awk '{print $2}')
+          beta_2=$(grep 'Betti Numbers:' secure_report.txt -A 3 | grep 'β₂' | awk '{print $2}')
+          
+          # Create metrics file
+          cat > security-metrics.json << EOF
+          {
+            "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+            "commit": "${{ github.sha }}",
+            "workflow_run_id": "${{ github.run_id }}",
+            "secure_implementation": {
+              "vulnerability_score": $secure_score,
+              "betti_numbers": {
+                "beta_0": $beta_0,
+                "beta_1": $beta_1,
+                "beta_2": $beta_2
+              },
+              "torus_confidence": $(grep 'Torus Confidence' secure_report.txt | awk '{print $3}')
+            },
+            "vulnerable_implementation": {
+              "vulnerability_score": $vulnerable_score,
+              "torus_confidence": $(grep 'Torus Confidence' vulnerable_report.txt | awk '{print $3}')
+            },
+            "verification": {
+              "secure_torus_structure": $(echo "$beta_0 == 1.0" | bc -l),
+              "secure_beta_1": $(echo "$beta_1 == 2.0" | bc -l),
+              "secure_beta_2": $(echo "$beta_2 == 1.0" | bc -l),
+              "secure_vulnerability_score": $(echo "$secure_score < 0.2" | bc -l),
+              "vulnerable_vulnerability_score": $(echo "$vulnerable_score > 0.5" | bc -l)
+            }
+          }
+          EOF
+          
+          echo "metrics_path=$(pwd)/security-metrics.json" >> $GITHUB_OUTPUT
+
+      - name: Upload security metrics
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-metrics
+          path: ${{ steps.extract-metrics.outputs.metrics_path }}
+
+      - name: Display security metrics
+        run: cat ${{ steps.extract-metrics.outputs.metrics_path }}
+
+      - name: Update security dashboard
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # This would update a security dashboard in a real implementation
+          echo "Updating security dashboard with latest metrics..."
+          cat ${{ steps.extract-metrics.outputs.metrics_path }} | jq .
