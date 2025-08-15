@@ -5,25 +5,26 @@ This module implements the Predictive Analysis component for the TopoSphere syst
 providing advanced forecasting capabilities for identifying potential future vulnerabilities
 in ECDSA implementations. The module is based on the fundamental insight from our research:
 "For secure ECDSA implementations, the signature space forms a topological torus (β₀=1, β₁=2, β₂=1)"
-and "Temporal analysis of topological features reveals emerging vulnerability patterns before they can be exploited."
+and "Temporal patterns in topological features predict future vulnerability emergence."
 
 The module is built on the following foundational principles:
 - For secure ECDSA implementations, the signature space forms a topological torus (β₀=1, β₁=2, β₂=1)
 - Temporal patterns in topological features predict future vulnerability emergence
-- Quantum-inspired forecasting models provide advanced prediction capabilities
-- Integration with historical data enables trend analysis and early warning detection
+- Machine learning models trained on historical data provide accurate vulnerability prediction
+- Integration with TCON (Topological Conformance) verification ensures mathematical rigor
+- Fixed resource profile enforcement to prevent timing/volume analysis
 
 As stated in our research: "Topology is not a hacking tool, but a microscope for diagnosing vulnerabilities.
 Ignoring it means building cryptography on sand." This module embodies that principle by providing
 mathematically rigorous predictive analysis that forecasts vulnerabilities before they can be exploited.
 
 Key features:
-- Temporal analysis of topological features for trend detection and early warning
-- Quantum-inspired forecasting models with adaptive parameters
-- Integration with historical vulnerability data
+- Machine learning models trained on historical topological analysis data
+- Explainable predictions showing contributing factors
+- Integration with TCON (Topological Conformance) verification
 - Fixed resource profile enforcement to prevent timing/volume analysis
-- Differential privacy mechanisms to prevent algorithm recovery
-- Multiscale forecasting for short-term and long-term risk prediction
+- Continuous model improvement through incremental learning
+- Quantum-inspired feature importance calculation
 
 This implementation follows the industrial-grade standards of AuditCore v3.2, with direct integration
 to the topological analysis framework for comprehensive security assessment.
@@ -39,19 +40,22 @@ __all__ = [
     "PredictionResult",
     "TemporalFeatureExtractor",
     "QuantumForecastingEngine",
+    "VulnerabilityPredictor",
     
     # Supporting components
     "ForecastHorizon",
     "RiskTrend",
     "ForecastingModel",
-    "VulnerabilityPredictor",
+    "PredictionConfidence",
     
     # Helper functions
     "configure_predictive_analysis",
     "predict_vulnerabilities",
     "get_forecast_accuracy",
     "generate_prediction_report",
-    "is_implementation_at_risk"
+    "is_implementation_at_risk",
+    "get_risk_level",
+    "calculate_risk_score"
 ]
 
 # Import core components
@@ -74,7 +78,8 @@ from .vulnerability_predictor import (
 from .enums import (
     ForecastHorizon,
     RiskTrend,
-    ForecastingModel
+    ForecastingModel,
+    PredictionConfidence
 )
 
 # Constants
@@ -92,6 +97,7 @@ MAX_HISTORICAL_POINTS = 100  # Maximum historical points to store
 MIN_HISTORICAL_POINTS = 5  # Minimum historical points for prediction
 FORECAST_UPDATE_INTERVAL = 300.0  # Seconds between forecast updates
 MAX_PREDICTION_TIME = 60.0  # Maximum time for a single prediction (seconds)
+MODEL_TRAINING_INTERVAL = 86400.0  # 24 hours between model retraining
 
 def configure_predictive_analysis(config: Optional[Dict[str, Any]] = None) -> PredictiveAnalysisConfig:
     """
@@ -103,14 +109,13 @@ def configure_predictive_analysis(config: Optional[Dict[str, Any]] = None) -> Pr
     Returns:
         Configured PredictiveAnalysisConfig object
     """
-    from .predictive_analyzer import PredictiveAnalysisConfig
-    
     base_config = {
         "forecast_horizon": DEFAULT_FORECAST_HORIZON,
         "max_prediction_time": MAX_PREDICTION_TIME,
         "max_historical_points": MAX_HISTORICAL_POINTS,
         "min_historical_points": MIN_HISTORICAL_POINTS,
         "forecast_update_interval": FORECAST_UPDATE_INTERVAL,
+        "model_training_interval": MODEL_TRAINING_INTERVAL,
         "betti_tolerance": 0.3,
         "prediction_confidence_threshold": PREDICTION_CONFIDENCE_THRESHOLD,
         "risk_threshold": RISK_THRESHOLD,
@@ -122,14 +127,14 @@ def configure_predictive_analysis(config: Optional[Dict[str, Any]] = None) -> Pr
     
     return PredictiveAnalysisConfig(**base_config)
 
-def predict_vulnerabilities(signature_ List[Dict[str, int]],
+def predict_vulnerabilities(signature_data: List[Dict[str, int]],
                           config: Optional[PredictiveAnalysisConfig] = None,
                           forecast_horizon: ForecastHorizon = DEFAULT_FORECAST_HORIZON) -> PredictionResult:
     """
     Predicts future vulnerabilities in ECDSA signature data through temporal analysis.
     
     Args:
-        signature_ List of signature data points with u_r, u_z, r values
+        signature_data: List of signature data points with u_r, u_z, r values
         config: Optional configuration for vulnerability prediction
         forecast_horizon: Time horizon for the prediction
         
@@ -143,21 +148,19 @@ def predict_vulnerabilities(signature_ List[Dict[str, int]],
     return analyzer.predict(signature_data, forecast_horizon)
 
 def get_forecast_accuracy(public_key: str,
-                        historical_ List[Tuple[datetime, TopologicalAnalysisResult]],
+                        historical_data: List[Tuple[datetime, TopologicalAnalysisResult]],
                         forecast_horizon: ForecastHorizon = ForecastHorizon.SHORT_TERM) -> float:
     """
     Get the accuracy of past predictions for a public key.
     
     Args:
         public_key: Public key to evaluate
-        historical_ Historical analysis data
+        historical_data: Historical analysis data
         forecast_horizon: Forecast horizon to evaluate
         
     Returns:
         Prediction accuracy (0-1, higher = more accurate)
     """
-    # In a real implementation, this would calculate actual accuracy
-    # For demonstration, we'll return a mock result
     analyzer = PredictiveAnalyzer(configure_predictive_analysis())
     return analyzer.get_prediction_accuracy(public_key, historical_data, forecast_horizon)
 
@@ -237,6 +240,38 @@ def calculate_risk_score(topological_distance: float,
     # Calculate final score
     risk_score = min(1.0, base_score + trend_factor + stability_factor)
     return risk_score
+
+def get_prediction_metrics(prediction_result: PredictionResult) -> Dict[str, Any]:
+    """
+    Gets detailed metrics from a prediction result.
+    
+    Args:
+        prediction_result: Prediction result
+        
+    Returns:
+        Dictionary with detailed prediction metrics
+    """
+    return {
+        "risk_score": prediction_result.risk_score,
+        "confidence": prediction_result.confidence,
+        "trend_value": prediction_result.trend_value,
+        "trend_strength": prediction_result.trend_strength,
+        "critical_vulnerabilities": prediction_result.critical_vulnerabilities,
+        "risk_level": get_risk_level(prediction_result),
+        "is_at_risk": is_implementation_at_risk(prediction_result),
+        "forecast_horizon": prediction_result.forecast_horizon.value,
+        "explanation": prediction_result.explanation.to_dict()
+    }
+
+def get_model_performance() -> Dict[str, Any]:
+    """
+    Gets performance metrics for the prediction model.
+    
+    Returns:
+        Dictionary with model performance metrics
+    """
+    predictor = VulnerabilityPredictor(configure_predictive_analysis())
+    return predictor.get_model_metrics()
 
 def initialize_predictive_analysis() -> None:
     """
