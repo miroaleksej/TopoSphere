@@ -1,12 +1,14 @@
 """
 TopoSphere Dynamic Analysis Module
 
-This module provides the Dynamic Analysis component for the TopoSphere system, implementing
-the industrial-grade standards of AuditCore v3.2. The Dynamic Analysis is a critical component
-designed to perform real-time analysis of ECDSA implementations through adaptive topological
-monitoring and vulnerability detection.
+This module implements the Dynamic Analysis component for the TopoSphere system,
+providing real-time analysis of ECDSA implementations through adaptive topological
+monitoring and vulnerability detection. The module is built on the fundamental insight
+from our research: "For secure ECDSA implementations, the signature space forms a
+topological torus (β₀=1, β₁=2, β₂=1)" and "Direct analysis without building the full
+hypercube enables efficient monitoring of large spaces."
 
-The module is built on the following foundational principles from our research:
+The module is built on the following foundational principles:
 - For secure ECDSA implementations, the signature space forms a topological torus (β₀=1, β₁=2, β₂=1)
 - Direct analysis without building the full hypercube enables efficient monitoring of large spaces
 - Dynamic adaptation of analysis parameters based on resource constraints and security requirements
@@ -44,13 +46,16 @@ __all__ = [
     "AnalysisStrategy",
     "ResourceAdaptationEngine",
     "QuantumSecurityMetrics",
+    "VulnerabilityModel",
+    "RiskForecaster",
     
     # Helper functions
     "configure_dynamic_analysis",
     "monitor_signature_space",
     "detect_vulnerabilities",
     "get_security_level",
-    "is_implementation_secure"
+    "is_implementation_secure",
+    "get_vulnerability_score"
 ]
 
 # Import core components
@@ -75,6 +80,12 @@ from .resource_adaptation import (
 )
 from .quantum_metrics import (
     QuantumSecurityMetrics
+)
+from .vulnerability_model import (
+    VulnerabilityModel
+)
+from .risk_forecaster import (
+    RiskForecaster
 )
 
 # Constants
@@ -103,8 +114,6 @@ def configure_dynamic_analysis(config: Optional[Dict[str, Any]] = None) -> Dynam
     Returns:
         Configured DynamicAnalysisConfig object
     """
-    from .dynamic_analyzer import DynamicAnalysisConfig
-    
     base_config = {
         "analysis_interval": DEFAULT_ANALYSIS_INTERVAL,
         "max_analysis_time": MAX_ANALYSIS_TIME,
@@ -159,8 +168,9 @@ def detect_vulnerabilities(signature_data: List[Dict[str, int]],
     Returns:
         List of detected vulnerabilities with details
     """
-    # In a real implementation, this would use the DynamicAnalyzer
-    # For demonstration, we'll return a mock result
+    if config is None:
+        config = configure_dynamic_analysis()
+    
     analyzer = DynamicAnalyzer(config)
     result = analyzer.analyze(signature_data)
     return result.vulnerabilities
@@ -196,26 +206,9 @@ def is_implementation_secure(analysis_result: DynamicAnalysisResult) -> bool:
     """
     return analysis_result.vulnerability_score < VULNERABILITY_THRESHOLD
 
-def get_torus_confidence(betti_numbers: Dict[str, float]) -> float:
-    """
-    Calculates confidence that the signature space forms a torus structure.
-    
-    Args:
-        betti_numbers: Calculated Betti numbers (beta_0, beta_1, beta_2)
-        
-    Returns:
-        float: Confidence score (0-1, higher = more confident)
-    """
-    beta0_confidence = 1.0 - abs(betti_numbers.get("beta_0", 0) - 1.0)
-    beta1_confidence = 1.0 - (abs(betti_numbers.get("beta_1", 0) - 2.0) / 2.0)
-    beta2_confidence = 1.0 - abs(betti_numbers.get("beta_2", 0) - 1.0)
-    
-    # Weighted average (beta_1 is most important for torus structure)
-    return (beta0_confidence * 0.2 + beta1_confidence * 0.6 + beta2_confidence * 0.2)
-
-def calculate_vulnerability_score(topological_distance: float,
-                                anomaly_score: float,
-                                stability_score: float) -> float:
+def get_vulnerability_score(topological_distance: float,
+                           anomaly_score: float,
+                           stability_score: float) -> float:
     """
     Calculates an overall vulnerability score based on dynamic metrics.
     
@@ -243,6 +236,23 @@ def calculate_vulnerability_score(topological_distance: float,
         stability_penalty * 0.2
     )
     return min(1.0, vulnerability_score)
+
+def get_torus_confidence(betti_numbers: Dict[str, float]) -> float:
+    """
+    Calculates confidence that the signature space forms a torus structure.
+    
+    Args:
+        betti_numbers: Calculated Betti numbers (beta_0, beta_1, beta_2)
+        
+    Returns:
+        float: Confidence score (0-1, higher = more confident)
+    """
+    beta0_confidence = 1.0 - abs(betti_numbers.get("beta_0", 0) - 1.0)
+    beta1_confidence = 1.0 - (abs(betti_numbers.get("beta_1", 0) - 2.0) / 2.0)
+    beta2_confidence = 1.0 - abs(betti_numbers.get("beta_2", 0) - 1.0)
+    
+    # Weighted average (beta_1 is most important for torus structure)
+    return (beta0_confidence * 0.2 + beta1_confidence * 0.6 + beta2_confidence * 0.2)
 
 def initialize_dynamic_analysis() -> None:
     """
