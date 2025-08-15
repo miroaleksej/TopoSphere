@@ -3,15 +3,16 @@ TopoSphere Post-Quantum Cryptography Module
 
 This module implements the Post-Quantum Cryptography component for the TopoSphere system,
 providing advanced analysis capabilities for post-quantum cryptographic schemes. The module
-is based on the fundamental insight from our research: "For secure post-quantum implementations,
-the parameter space forms a topological structure with specific invariants" and "Topological
-analysis of j-invariant distributions enables vulnerability detection in isogeny-based schemes."
+is based on the fundamental insight from our research: "For secure CSIDH implementations,
+the expected Betti numbers are β₀=1, β₁=n-1, β₂=binomial(n-1,2)" and "For secure SIKE implementations,
+the j-invariant distribution should exhibit uniformity on the supersingular isogeny graph."
 
 The module is built on the following foundational principles:
 - For secure CSIDH implementations, the expected Betti numbers are β₀=1, β₁=n-1, β₂=binomial(n-1,2)
 - For secure SIKE implementations, the j-invariant distribution should exhibit uniformity on the supersingular isogeny graph
 - Topological entropy h_top = log(Σ|e_i|) > log n – δ serves as a security metric
 - Integration of quantum-inspired algorithms enables efficient analysis of large parameter spaces
+- Entanglement entropy S = log₂(gcd(d, n)) provides a powerful metric for vulnerability detection
 
 As stated in our research: "Topology is not a hacking tool, but a microscope for diagnosing vulnerabilities.
 Ignoring it means building cryptography on sand." This module embodies that principle by providing
@@ -42,18 +43,24 @@ __all__ = [
     "PQAnalysisResult",
     "IsogenyTopologyAnalyzer",
     "JInvariantMapper",
+    "SIKEIntegration",
+    "EntanglementEntropyAnalyzer",
     
     # Supporting components
     "PQSchemeType",
     "TopologicalEntropyMetrics",
     "FourierSpectralAnalyzer",
+    "EntanglementPattern",
+    "EntanglementSeverity",
     
     # Helper functions
     "configure_pq_analysis",
     "analyze_pq_implementation",
     "verify_key_generation",
     "get_security_level",
-    "is_implementation_secure"
+    "is_implementation_secure",
+    "get_quantum_security_metrics",
+    "verify_tcon_compliance"
 ]
 
 # Import core components
@@ -67,6 +74,14 @@ from .isogeny_topology import (
 )
 from .j_invariant_mapper import (
     JInvariantMapper
+)
+from .sike_integration import (
+    SIKEIntegration
+)
+from .entanglement_entropy import (
+    EntanglementEntropyAnalyzer,
+    EntanglementPattern,
+    EntanglementSeverity
 )
 
 # Import supporting components
@@ -93,6 +108,7 @@ DEFAULT_PQ_SCHEME = PQSchemeType.CSIDH_512
 TOPOLOGICAL_ENTROPY_THRESHOLD = 0.8  # Minimum h_top / log(n) for secure implementation
 BETTI_NUMBER_TOLERANCE = 0.1  # Tolerance for Betti number verification
 FOURIER_PEAK_THRESHOLD = 0.7  # Threshold for vulnerability-indicating peaks
+ENTANGLEMENT_THRESHOLD = 0.7  # Threshold for entanglement-based scanning
 MINIMUM_SECURE_BETTI_NUMBERS = {
     "CSIDH-512": {
         "beta_0": 1.0,
@@ -123,13 +139,12 @@ def configure_pq_analysis(config: Optional[Dict[str, Any]] = None) -> PQAnalysis
     Returns:
         Configured PQAnalysisConfig object
     """
-    from .pq_analyzer import PQAnalysisConfig
-    
     base_config = {
         "scheme_type": DEFAULT_PQ_SCHEME,
         "topological_entropy_threshold": TOPOLOGICAL_ENTROPY_THRESHOLD,
         "betti_tolerance": BETTI_NUMBER_TOLERANCE,
         "fourier_peak_threshold": FOURIER_PEAK_THRESHOLD,
+        "entanglement_threshold": ENTANGLEMENT_THRESHOLD,
         "max_analysis_time": 300.0,  # Maximum time for a single analysis (seconds)
         "max_memory_usage": 0.8  # Maximum memory usage as fraction of available
     }
@@ -171,8 +186,6 @@ def verify_key_generation(key: Dict[str, Any],
     Returns:
         Dictionary with verification results
     """
-    # In a real implementation, this would use the PostQuantumAnalyzer
-    # For demonstration, we'll return a mock result
     analyzer = PostQuantumAnalyzer(configure_pq_analysis({"scheme_type": scheme_type}))
     return analyzer.verify_key(key)
 
@@ -279,6 +292,142 @@ def get_nist_pqc_level(scheme_type: PQSchemeType) -> str:
         return "NIST-LEVEL-3"
     else:
         return "NIST-LEVEL-5"
+
+def get_quantum_security_metrics(pq_implementation: Any,
+                               scheme_type: PQSchemeType = DEFAULT_PQ_SCHEME) -> Dict[str, Any]:
+    """
+    Gets quantum-inspired security metrics for a post-quantum implementation.
+    
+    Args:
+        pq_implementation: Post-quantum implementation to analyze
+        scheme_type: Type of post-quantum scheme
+        
+    Returns:
+        Dictionary with quantum security metrics
+    """
+    if scheme_type in [PQSchemeType.SIKE_P434, PQSchemeType.SIKE_P503, PQSchemeType.SIKE_P751]:
+        # For SIKE, use j-invariant analysis
+        sike = SIKEIntegration(configure_pq_analysis({"scheme_type": scheme_type}))
+        j_invariants = pq_implementation.get("j_invariants", [])
+        return sike.get_quantum_security_metrics(j_invariants, scheme_type)
+    else:
+        # For CSIDH, use entanglement entropy analysis
+        analyzer = EntanglementEntropyAnalyzer(configure_pq_analysis({"scheme_type": scheme_type}))
+        public_key = pq_implementation.get("public_key")
+        if not public_key:
+            raise ValueError("Public key is required for entanglement entropy analysis")
+        return analyzer.get_quantum_security_metrics(public_key)
+
+def verify_tcon_compliance(pq_implementation: Any,
+                          scheme_type: PQSchemeType = DEFAULT_PQ_SCHEME) -> bool:
+    """
+    Verifies TCON (Topological Conformance) compliance for a post-quantum implementation.
+    
+    Args:
+        pq_implementation: Post-quantum implementation to analyze
+        scheme_type: Type of post-quantum scheme
+        
+    Returns:
+        bool: True if TCON compliant, False otherwise
+    """
+    if scheme_type in [PQSchemeType.SIKE_P434, PQSchemeType.SIKE_P503, PQSchemeType.SIKE_P751]:
+        # For SIKE, use j-invariant analysis
+        sike = SIKEIntegration(configure_pq_analysis({"scheme_type": scheme_type}))
+        j_invariants = pq_implementation.get("j_invariants", [])
+        return sike.verify_tcon_compliance(j_invariants, scheme_type)
+    else:
+        # For CSIDH, use entanglement entropy analysis
+        analyzer = EntanglementEntropyAnalyzer(configure_pq_analysis({"scheme_type": scheme_type}))
+        public_key = pq_implementation.get("public_key")
+        if not public_key:
+            raise ValueError("Public key is required for entanglement entropy analysis")
+        return analyzer.verify_tcon_compliance(public_key)
+
+def analyze_sike_implementation(j_invariants: List[int],
+                               variant: str = "SIKEp434",
+                               force_reanalysis: bool = False) -> Dict[str, Any]:
+    """
+    Analyzes a SIKE implementation for vulnerabilities.
+    
+    Args:
+        j_invariants: List of j-invariants from key generation
+        variant: SIKE variant to analyze
+        force_reanalysis: Whether to force reanalysis even if recent
+        
+    Returns:
+        Dictionary with analysis results
+    """
+    try:
+        # Convert variant string to SIKEVariant enum
+        from .sike_integration import SIKEVariant
+        variant_enum = SIKEVariant[variant.upper()]
+        
+        # Perform analysis
+        sike = SIKEIntegration(configure_pq_analysis())
+        result = sike.analyze(j_invariants, variant_enum, force_reanalysis)
+        
+        return {
+            "pattern_type": result.pattern_type.value,
+            "uniformity_score": result.uniformity_score,
+            "topological_entropy": result.topological_entropy,
+            "symmetry_violation_rate": result.symmetry_violation_rate,
+            "vulnerability_score": result.vulnerability_score,
+            "security_level": result.security_level,
+            "critical_regions": result.critical_regions,
+            "quantum_metrics": sike.get_quantum_security_metrics(j_invariants, variant_enum)
+        }
+    except KeyError:
+        raise ValueError(f"Unknown SIKE variant: {variant}")
+
+def analyze_csidh_implementation(public_key: Union[str, Any],
+                               force_reanalysis: bool = False) -> Dict[str, Any]:
+    """
+    Analyzes a CSIDH implementation for vulnerabilities.
+    
+    Args:
+        public_key: Public key to analyze
+        force_reanalysis: Whether to force reanalysis even if recent
+        
+    Returns:
+        Dictionary with analysis results
+    """
+    analyzer = EntanglementEntropyAnalyzer(configure_pq_analysis())
+    result = analyzer.analyze(public_key, force_reanalysis)
+    
+    return {
+        "entanglement_entropy": result.entanglement_metrics.entanglement_entropy,
+        "entanglement_score": result.entanglement_metrics.entanglement_score,
+        "gcd_value": result.entanglement_metrics.gcd_value,
+        "quantum_vulnerability_score": result.quantum_vulnerability_score,
+        "security_level": result.security_level,
+        "pattern_type": result.entanglement_metrics.pattern_type.value,
+        "critical_regions": result.critical_regions
+    }
+
+def get_vulnerability_probability(pq_implementation: Any,
+                                 scheme_type: PQSchemeType = DEFAULT_PQ_SCHEME) -> float:
+    """
+    Gets the probability of vulnerability for a post-quantum implementation.
+    
+    Args:
+        pq_implementation: Post-quantum implementation to analyze
+        scheme_type: Type of post-quantum scheme
+        
+    Returns:
+        Vulnerability probability (0-1)
+    """
+    if scheme_type in [PQSchemeType.SIKE_P434, PQSchemeType.SIKE_P503, PQSchemeType.SIKE_P751]:
+        # For SIKE
+        sike = SIKEIntegration(configure_pq_analysis({"scheme_type": scheme_type}))
+        j_invariants = pq_implementation.get("j_invariants", [])
+        return sike.get_vulnerability_probability(j_invariants, scheme_type)
+    else:
+        # For CSIDH
+        analyzer = EntanglementEntropyAnalyzer(configure_pq_analysis({"scheme_type": scheme_type}))
+        public_key = pq_implementation.get("public_key")
+        if not public_key:
+            raise ValueError("Public key is required for entanglement entropy analysis")
+        return analyzer.get_vulnerability_probability(public_key)
 
 def initialize_post_quantum() -> None:
     """
