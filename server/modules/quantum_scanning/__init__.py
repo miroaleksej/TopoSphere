@@ -12,6 +12,7 @@ The module is built on the following foundational principles:
 - Quantum-inspired algorithms provide exponential speedup in vulnerability detection
 - Amplitude amplification focuses computational resources on high-risk regions
 - Integration with topological analysis enables precise vulnerability localization
+- Entanglement entropy S = log₂(gcd(d, n)) serves as a powerful metric for vulnerability detection
 
 As stated in our research: "Topology is not a hacking tool, but a microscope for diagnosing vulnerabilities.
 Ignoring it means building cryptography on sand." This module embodies that principle by providing
@@ -24,6 +25,7 @@ Key features:
 - Fixed resource profile enforcement to prevent timing/volume analysis
 - Differential privacy mechanisms to prevent algorithm recovery
 - Multiscale scanning for comprehensive vulnerability detection
+- Entanglement entropy analysis for weak key detection
 
 This implementation follows the industrial-grade standards of AuditCore v3.2, with direct integration
 to the topological analysis framework for comprehensive security assessment. The module implements
@@ -41,18 +43,23 @@ __all__ = [
     "ScanResult",
     "AmplitudeAmplifier",
     "TopologicalAnomalyMapper",
+    "EntanglementEntropyAnalyzer",
     
     # Supporting components
     "ScanStrategy",
     "AmplitudeProfile",
     "QuantumEntanglementMetrics",
+    "EntanglementPattern",
+    "EntanglementSeverity",
     
     # Helper functions
     "configure_quantum_scanning",
     "perform_quantum_scan",
     "analyze_scan_results",
     "get_vulnerability_amplification",
-    "is_implementation_secure"
+    "is_implementation_secure",
+    "get_quantum_security_metrics",
+    "verify_tcon_compliance"
 ]
 
 # Import core components
@@ -67,13 +74,18 @@ from .amplitude_amplifier import (
 from .anomaly_mapper import (
     TopologicalAnomalyMapper
 )
+from .entanglement_entropy import (
+    EntanglementEntropyAnalyzer,
+    EntanglementMetrics,
+    EntanglementAnalysisResult,
+    EntanglementPattern,
+    EntanglementSeverity
+)
 
 # Import supporting components
 from .enums import (
     ScanStrategy,
-    AmplitudeProfile
-)
-from .quantum_metrics import (
+    AmplitudeProfile,
     QuantumEntanglementMetrics
 )
 
@@ -93,6 +105,7 @@ MAX_SCAN_ITERATIONS = 1000  # Maximum iterations for quantum scan
 MIN_AMPLITUDE = 0.01  # Minimum amplitude for scanning
 MAX_AMPLITUDE = 0.99  # Maximum amplitude for scanning
 DEFAULT_AMPLIFICATION_STEPS = 10  # Default number of amplification steps
+ENTROPY_VULNERABILITY_THRESHOLD = 0.3  # Threshold for entropy-based vulnerability
 
 def configure_quantum_scanning(config: Optional[Dict[str, Any]] = None) -> QuantumScanConfig:
     """
@@ -104,8 +117,6 @@ def configure_quantum_scanning(config: Optional[Dict[str, Any]] = None) -> Quant
     Returns:
         Configured QuantumScanConfig object
     """
-    from .quantum_scanner import QuantumScanConfig
-    
     base_config = {
         "scan_strategy": DEFAULT_SCAN_STRATEGY,
         "max_iterations": MAX_SCAN_ITERATIONS,
@@ -115,7 +126,8 @@ def configure_quantum_scanning(config: Optional[Dict[str, Any]] = None) -> Quant
         "critical_vulnerability_threshold": CRITICAL_VULNERABILITY_THRESHOLD,
         "amplification_steps": DEFAULT_AMPLIFICATION_STEPS,
         "min_amplitude": MIN_AMPLITUDE,
-        "max_amplitude": MAX_AMPLITUDE
+        "max_amplitude": MAX_AMPLITUDE,
+        "entropy_vulnerability_threshold": ENTROPY_VULNERABILITY_THRESHOLD
     }
     
     if config:
@@ -279,6 +291,100 @@ def get_quantum_security_metrics(scan_result: ScanResult) -> Dict[str, Any]:
         "quantum_risk_score": scan_result.entanglement_metrics.get("quantum_risk_score", 0.0),
         "security_level": analyze_scan_results(scan_result)["security_level"]
     }
+
+def verify_tcon_compliance(scan_result: ScanResult) -> bool:
+    """
+    Verifies TCON (Topological Conformance) compliance based on scan results.
+    
+    Args:
+        scan_result: Scan result to evaluate
+        
+    Returns:
+        bool: True if TCON compliant, False otherwise
+    """
+    # TCON compliance requires:
+    # 1. GCD(d, n) = 1 (no weak key vulnerability)
+    # 2. Entanglement entropy above threshold
+    # 3. Security level is secure or caution
+    return (
+        scan_result.weak_key_gcd is None or scan_result.weak_key_gcd == 1 and
+        scan_result.entanglement_metrics.get("entanglement_entropy", 0.0) > math.log2(SECP256K1_ORDER) * 0.7 and
+        analyze_scan_results(scan_result)["security_level"] in ["secure", "caution"]
+    )
+
+def get_entanglement_metrics(public_key: str,
+                           config: Optional[QuantumScanConfig] = None) -> EntanglementMetrics:
+    """
+    Gets entanglement metrics for a public key.
+    
+    Args:
+        public_key: Public key to analyze
+        config: Optional configuration for the analysis
+        
+    Returns:
+        EntanglementMetrics object
+    """
+    if config is None:
+        config = configure_quantum_scanning()
+    
+    analyzer = EntanglementEntropyAnalyzer(config)
+    analysis_result = analyzer.analyze(public_key)
+    return analysis_result.entanglement_metrics
+
+def analyze_entanglement(public_key: str,
+                       config: Optional[QuantumScanConfig] = None,
+                       force_reanalysis: bool = False) -> EntanglementAnalysisResult:
+    """
+    Performs comprehensive entanglement entropy analysis.
+    
+    Args:
+        public_key: Public key to analyze
+        config: Optional configuration for the analysis
+        force_reanalysis: Whether to force reanalysis even if recent
+        
+    Returns:
+        EntanglementAnalysisResult object
+    """
+    if config is None:
+        config = configure_quantum_scanning()
+    
+    analyzer = EntanglementEntropyAnalyzer(config)
+    return analyzer.analyze(public_key, force_reanalysis)
+
+def get_vulnerability_probability(public_key: str,
+                                config: Optional[QuantumScanConfig] = None) -> float:
+    """
+    Gets the probability of vulnerability based on entanglement metrics.
+    
+    Args:
+        public_key: Public key to analyze
+        config: Optional configuration for the analysis
+        
+    Returns:
+        Vulnerability probability (0-1)
+    """
+    analysis = analyze_entanglement(public_key, config)
+    return analysis.quantum_vulnerability_score
+
+def get_entanglement_profile(public_key: str,
+                           config: Optional[QuantumScanConfig] = None,
+                           resolution: int = 100) -> np.ndarray:
+    """
+    Gets the entanglement profile across the signature space.
+    
+    Args:
+        public_key: Public key to analyze
+        config: Optional configuration for the analysis
+        resolution: Resolution of the profile
+        
+    Returns:
+        2D array representing entanglement profile
+    """
+    if config is None:
+        config = configure_quantum_scanning()
+    
+    analyzer = EntanglementEntropyAnalyzer(config)
+    return analyzer.get_entanglement_profile(public_key, resolution)
 
 def initialize_quantum_scanning() -> None:
     """
