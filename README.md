@@ -9,6 +9,7 @@
 
 [Why Your Crypto Wallet Is Not As Secure As You Think](https://github.com/miroaleksej/isogenyguard-sdk/blob/main/Why%20Your%20Crypto%20Wallet%20Is%20Not%20As%20Secure%20As%20You%20Think.md)
 
+# Programming work is in progress, and the system is not complete!
 
 **TopoSphere** is a revolutionary framework for topological analysis of ECDSA implementations that transforms cryptographic security assessment through advanced mathematical principles. Unlike traditional auditing tools, TopoSphere treats the ECDSA signature space as a topological torus, enabling unprecedented vulnerability detection while protecting intellectual property through a client-server architecture.
 
